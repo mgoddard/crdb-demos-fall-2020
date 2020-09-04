@@ -14,6 +14,7 @@ Demo:
   4. Index the lower cased versions (plus the "yr" column -- the year)
   5. Build inverted indexes on the actors_lc and genres_lc columns
   6. Leave the original JSON intact, in the "agg" column
+  7. SELECT yr, agg FROM movies WHERE actors_lc @> '{"jack black"}' ORDER BY yr DESC;
 
 """
 
