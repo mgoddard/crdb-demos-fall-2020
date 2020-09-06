@@ -69,10 +69,10 @@ LIMIT 10;
 
 * Get a sample of the MVCC timestamps:
 ```
-SELECT name, crdb_internal_mvcc_timestamp, (crdb_internal_mvcc_timestamp/1.0E+09)::INT::TIMESTAMP
+SELECT DATE_TRUNC('minute', (crdb_internal_mvcc_timestamp/1.0E+09)::INT::TIMESTAMP), COUNT(*)
 FROM osm
-ORDER BY RANDOM()
-LIMIT 10;
+GROUP BY 1
+ORDER BY 1 DESC;
 ```
 
 * Delete a batch of 10k rows:
