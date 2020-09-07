@@ -1,5 +1,7 @@
 # crdb-demos-fall-2020
-Some demos and experiments using CockroachDB
+
+Some demos and experiments using CockroachDB.  Requires the spatial features of CockroachDB (expected in v20.2).
+I am using `v20.2.0-alpha.3`.
 
 ## Indexing of computed columns
 
@@ -38,8 +40,36 @@ SELECT yr, agg FROM movies WHERE actors_lc @> '{"jack black"}' ORDER BY yr DESC;
 
 ## AS OF SYSTEM TIME ...
 
-* Load 1M rows of the OpenStreetMap data set.
-* Run this query with the `AS OF SYSTEM TIME ...` commented out (as shown):
+* Data loader is [here](./load_osm_offset.py). Set these environment variables prior to running: `PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE`
+* The [data set](https://storage.googleapis.com/crl-goddard-gis/osm_10m_eu.txt.gz) is a refined extract from the OpenStreetMap data set
+
+* Create the `osm` table:
+
+```
+CREATE TABLE osm
+(
+  id BIGINT
+  , date_time TIMESTAMP WITH TIME ZONE
+  , uid TEXT
+  , name TEXT
+  , key_value TEXT[]
+  , ref_point GEOGRAPHY
+  , geohash4 TEXT -- first N chars of geohash (here, 4 for box of about +/- 20 km)
+  , CONSTRAINT "primary" PRIMARY KEY (geohash4 ASC, id ASC)
+);
+```
+
+* Load 1M rows of the OpenStreetMap data set.  The `sleep 60` is done to facilitate doing incremental deletes; the `100000` specifies the number
+of rows to load (so, each 60 seconds, 100k rows would be loaded and the total would be 1M rows).  The `110000` value is the number of lines of
+the input file to skip each time; it's higher than expected, by 10k, because the loader skips malformed rows.
+
+
+```
+$ for i in {1..10} ; do n=$(( i * 110000 )) ; time ./load_osm_offset.py osm_100m_eu.txt.gz 100000 $n ; sleep 60 ; done
+```
+
+* Run this query with the `AS OF SYSTEM TIME ...` commented out (as shown).  If this is run *during the data load*, the effect
+of the `AS OF SYSTEM TIME` clause will be far more pronounced, and it may be necessary to use the line with the `-180s` value.
 
 ```
 WITH q3 AS
@@ -59,7 +89,11 @@ ORDER BY dist_m ASC
 LIMIT 10;
 ```
 
-* Uncomment the `AS OF SYSTEM TIME ...` line and re-run, observing the effect on runtime.
+* Uncomment one of the `AS OF SYSTEM TIME ...` lines and re-run, observing the effect on runtime.
+* Building a GIN index on the `key_value` columns is essential for good performance:
+```
+CREATE INDEX ON osm USING GIN(key_value);
+```
 
 ## Moving / exchanging partitions – data archivization
 
