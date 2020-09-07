@@ -35,7 +35,12 @@ CREATE INDEX ON movies USING GIN(genres_lc);
 * Query the data using the indexes of the computed columns; e.g.
 
 ```
-SELECT yr, agg FROM movies WHERE actors_lc @> '{"jack black"}' ORDER BY yr DESC;
+SELECT agg->>'title' "Title", yr "Year", agg->'cast' "Cast"
+FROM movies
+AS OF SYSTEM TIME experimental_follower_read_timestamp()
+WHERE genres_lc @> '{drama}'
+ORDER BY yr DESC
+LIMIT 10;
 ```
 
 ## AS OF SYSTEM TIME ...

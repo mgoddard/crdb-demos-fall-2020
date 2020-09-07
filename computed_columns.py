@@ -52,7 +52,15 @@ if len(sys.argv) < 2:
   sys.exit(1)
 movie_file = sys.argv[1]
 
-conn = psycopg2.connect(database=os.getenv("PGDATABASE", "defaultdb"), user=os.getenv("PGUSER", "root"), password=os.getenv("PGPASSWORD", ""))
+#conn = psycopg2.connect(database=os.getenv("PGDATABASE", "defaultdb"), user=os.getenv("PGUSER", "root"), password=os.getenv("PGPASSWORD", ""))
+conn = psycopg2.connect(
+  database=os.getenv("PGDATABASE", "defaultdb")
+  , user=os.getenv("PGUSER", "root")
+  , port=int(os.getenv("PGPORT", "26257"))
+  , host=os.getenv("PGHOST", "localhost")
+  , application_name="Movies Data Loader"
+  )
+
 movie_file = sys.argv[1]
 
 max_rows = 1000000
