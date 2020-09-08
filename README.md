@@ -38,10 +38,17 @@ CREATE INDEX ON movies USING GIN(genres_lc);
 SELECT agg->>'title' "Title", yr "Year", agg->'cast' "Cast"
 FROM movies
 AS OF SYSTEM TIME experimental_follower_read_timestamp()
-WHERE genres_lc @> '{drama}'
+WHERE genres_lc @> '{adventure}'
 ORDER BY yr DESC
 LIMIT 10;
 ```
+
+## 2 Data Center Using CDC
+
+![2 DC map](./2-DC-locations-map.jpg)
+
+* [This script](./roachprod_3_gcp.sh) documents the setup and running of this demo, which consists of two 3 node CockroachDB
+clusters installed in Google Cloud data centers separated by 800 km.
 
 ## AS OF SYSTEM TIME ...
 
@@ -70,7 +77,7 @@ the input file to skip each time; it's higher than expected, by 10k, because the
 
 
 ```
-$ for i in {1..10} ; do n=$(( i * 110000 )) ; time ./load_osm_offset.py osm_100m_eu.txt.gz 100000 $n ; sleep 60 ; done
+$ for i in {1..10} ; do n=$(( i * 110000 )) ; time ./load_osm_offset.py osm_10m_eu.txt.gz 100000 $n ; sleep 60 ; done
 ```
 
 * Run this query with the `AS OF SYSTEM TIME ...` commented out (as shown).  If this is run *during the data load*, the effect
