@@ -114,7 +114,28 @@ CREATE INDEX ON osm USING GIN(key_value);
 * [Related GitHub issue](https://github.com/cockroachdb/docs/issues/5647)
 * Example, using the same OSM data set, loaded in batches for the above:
 
-* Get a sample of the MVCC timestamps:
+* (*CURRENT*) Create an index on `date_time`
+
+```
+CREATE INDEX ON osm(date_time);
+```
+
+* Get a sample of the `date_time` values:
+```
+SELECT DATE_TRUNC('year', date_time), COUNT(*)
+FROM osm
+GROUP BY 1
+ORDER BY 2 DESC;
+```
+
+* Run deletes on this date range, in batches (here, 1k):
+```
+DELETE FROM osm
+WHERE date_time < '2008-01-01 00:00:00'::TIMESTAMP
+LIMIT 1000;
+```
+
+* (*IN NEXT RELEASE*) Get a sample of the MVCC timestamps:
 ```
 SELECT DATE_TRUNC('minute', (crdb_internal_mvcc_timestamp/1.0E+09)::INT::TIMESTAMP), COUNT(*)
 FROM osm
