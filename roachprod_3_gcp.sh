@@ -10,10 +10,10 @@ roachprod create ${CLUSTER2} --clouds gce --gce-zones us-east1-b -n 3 --local-ss
 : <<'_COMMENT'
 
 Refreshing DNS entries...
-mgoddard-va: [gce] 12h9m43s remaining
-  mgoddard-va-0001	mgoddard-va-0001.us-east4-a.cockroach-ephemeral	10.150.0.41	34.86.157.129
-  mgoddard-va-0002	mgoddard-va-0002.us-east4-a.cockroach-ephemeral	10.150.0.102	34.86.172.18
-  mgoddard-va-0003	mgoddard-va-0003.us-east4-a.cockroach-ephemeral	10.150.0.103	34.86.95.180
+mgoddard-va: [gce] 12h51m52s remaining
+  mgoddard-va-0001	mgoddard-va-0001.us-east4-a.cockroach-ephemeral	10.150.0.46	34.86.239.78
+  mgoddard-va-0002	mgoddard-va-0002.us-east4-a.cockroach-ephemeral	10.150.0.7	35.245.2.67
+  mgoddard-va-0003	mgoddard-va-0003.us-east4-a.cockroach-ephemeral	10.150.0.43	34.86.219.72
 mgoddard-va: waiting for nodes to start 3/3
 generating ssh key 1/1
 
@@ -66,7 +66,7 @@ chmod +x cdc-sink
 # On receiving end ($m2):
 ./cdc-sink --port 30004 --conn postgresql://root@localhost:26257/defaultdb?sslmode=disable --config='[{"endpoint": "osm.sql", "source_table": "osm", "destination_database": "defaultdb", "destination_table": "osm"}]'
 
-# On both source and sink
+# Ref. https://github.com/cockroachdb/cockroach/pull/45552
 SET CLUSTER SETTING rocksdb.min_wal_sync_interval = '250us';
 
 # On source end (replace the IP number with setting for $m2):

@@ -73,10 +73,12 @@ CREATE TABLE osm
   , uid TEXT
   , name TEXT
   , key_value TEXT[]
-  , ref_point GEOGRAPHY
+  , lat FLOAT8
+  , lon FLOAT8
   , geohash4 TEXT -- first N chars of geohash (here, 4 for box of about +/- 20 km)
   , CONSTRAINT "primary" PRIMARY KEY (geohash4 ASC, id ASC)
 );
+
 ```
 
 * Load 1M rows of the OpenStreetMap data set.  The `sleep 60` is done to facilitate doing incremental deletes; the `100000` specifies the number
@@ -85,27 +87,18 @@ the input file to skip each time; it's higher than expected, by 10k, because the
 
 
 ```
-$ for i in {1..10} ; do n=$(( i * 110000 )) ; time ./load_osm_offset.py osm_10m_eu.txt.gz 100000 $n ; sleep 60 ; done
+$ for i in {1..10} ; do n=$(( i * 110000 )) ; time ./load_osm_no_gis.py osm_10m_eu.txt.gz 100000 $n ; sleep 15 ; done
 ```
 
 * Run this query with the `AS OF SYSTEM TIME ...` commented out (as shown).  If this is run *during the data load*, the effect
 of the `AS OF SYSTEM TIME` clause will be far more pronounced, and it may be necessary to use the line with the `-180s` value.
 
 ```
-WITH q3 AS
-(
-  SELECT name,
-    ST_Distance(ST_MakePoint(-0.1192033, 51.5172348)::GEOGRAPHY, ref_point::GEOGRAPHY)::NUMERIC(9, 2) dist_m,
-    ST_AsText(ref_point), date_time, uid, key_value
-  FROM osm
-  WHERE
-    key_value @> '{gcpv, amenity=pub, real_ale=yes}'
-)
-SELECT * FROM q3
+SELECT name, geohash4, id, date_time, key_value
+FROM osm
 -- AS OF SYSTEM TIME experimental_follower_read_timestamp()
--- AS OF SYSTEM TIME '-180s'
-WHERE dist_m < 2.0E+03
-ORDER BY dist_m ASC
+WHERE key_value @> ARRAY['gcpv', 'amenity=pub', 'real_ale=yes']
+ORDER BY geohash4, id
 LIMIT 10;
 ```
 
