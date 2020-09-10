@@ -23,6 +23,7 @@ import psycopg2.errorcodes
 import logging
 import sys, os
 import json
+import time
 
 """
 drop table if exists movies;
