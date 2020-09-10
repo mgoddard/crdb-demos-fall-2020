@@ -1,7 +1,7 @@
 # crdb-demos-fall-2020
 
 Some demos and experiments using CockroachDB.
-These are run using 
+These are run using v20.1.5 of CockroachDB.
 
 ## Setup
 
