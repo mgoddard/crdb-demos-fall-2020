@@ -128,11 +128,11 @@ GROUP BY 1
 ORDER BY 2 DESC;
 ```
 
-* Run deletes on this date range, in batches (here, 1k):
+* Run deletes on this date range, in batches (here, 10k):
 ```
 DELETE FROM osm
 WHERE date_time < '2008-01-01 00:00:00'::TIMESTAMP
-LIMIT 1000;
+LIMIT 10000;
 ```
 
 * (*IN NEXT RELEASE*) Get a sample of the MVCC timestamps:
