@@ -81,7 +81,13 @@ with open(movie_file) as js:
       genres_lc.append(genre.lower())
     with conn.cursor() as cur:
       cur.execute(sql, (title_lc, actors_lc, genres_lc, int(row["year"]), json.dumps(row)))
-      conn.commit()
+      try:
+        conn.commit()
+      except Exception as e:
+        print("commit(): ", e)
+        print("Retrying commit() in 1 s")
+        time.sleep(1)
+        conn.commit()
     n += 1
 conn.close()
 

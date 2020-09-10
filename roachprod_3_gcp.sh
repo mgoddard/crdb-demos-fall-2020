@@ -67,7 +67,7 @@ chmod +x cdc-sink
 ./cdc-sink --port 30004 --conn postgresql://root@localhost:26257/defaultdb?sslmode=disable --config='[{"endpoint": "osm.sql", "source_table": "osm", "destination_database": "defaultdb", "destination_table": "osm"}]'
 
 # On both source and sink
-SET CLUSTER SETTING rocksdb.min_wal_sync_interval = '500us';
+SET CLUSTER SETTING rocksdb.min_wal_sync_interval = '250us';
 
 # On source end (replace the IP number with setting for $m2):
 SET CLUSTER SETTING kv.rangefeed.enabled = true;

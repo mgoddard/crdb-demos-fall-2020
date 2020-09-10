@@ -50,7 +50,6 @@ def insert_row(sql, close=False):
   with conn.cursor() as cur:
     try:
       cur.execute(sql)
-      #n_ins = cur.rowcount
     except Exception as e:
       print("execute(sql): ", e)
       sys.exit(1)

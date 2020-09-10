@@ -1,7 +1,15 @@
 # crdb-demos-fall-2020
 
-Some demos and experiments using CockroachDB.  Requires the spatial features of CockroachDB (expected in v20.2).
-I am using `v20.2.0-alpha.3`.
+Some demos and experiments using CockroachDB.
+These are run using 
+
+## Setup
+
+* A single, 3 node cluster [installed via roachprod](./roachprod_3_gcp.sh)
+* An SSH tunnel to the `remote_ip` of one cluster node:
+```
+ssh -f -N -T -L $local_port:localhost:26257 $remote_ip
+```
 
 ## Indexing of computed columns
 
@@ -38,7 +46,7 @@ CREATE INDEX ON movies USING GIN(genres_lc);
 SELECT agg->>'title' "Title", yr "Year", agg->'cast' "Cast"
 FROM movies
 AS OF SYSTEM TIME experimental_follower_read_timestamp()
-WHERE genres_lc @> '{adventure}'
+WHERE genres_lc @> ARRAY['adventure']
 ORDER BY yr DESC
 LIMIT 10;
 ```
