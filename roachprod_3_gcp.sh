@@ -9,30 +9,31 @@ roachprod create ${CLUSTER2} --clouds gce --gce-zones us-east1-b -n 3 --local-ss
 # Below is an example of output from both of the "create" operations:
 : <<'_COMMENT'
 
-mgoddard-va: [gce] 12h16m45s remaining
-  mgoddard-va-0001	mgoddard-va-0001.us-east4-a.cockroach-ephemeral	10.150.0.63	35.236.194.166
-  mgoddard-va-0002	mgoddard-va-0002.us-east4-a.cockroach-ephemeral	10.150.0.43	34.86.254.129
-  mgoddard-va-0003	mgoddard-va-0003.us-east4-a.cockroach-ephemeral	10.150.0.98	34.86.251.244
+Refreshing DNS entries...
+mgoddard-va: [gce] 12h9m43s remaining
+  mgoddard-va-0001	mgoddard-va-0001.us-east4-a.cockroach-ephemeral	10.150.0.41	34.86.157.129
+  mgoddard-va-0002	mgoddard-va-0002.us-east4-a.cockroach-ephemeral	10.150.0.102	34.86.172.18
+  mgoddard-va-0003	mgoddard-va-0003.us-east4-a.cockroach-ephemeral	10.150.0.103	34.86.95.180
 mgoddard-va: waiting for nodes to start 3/3
-
-mgoddard-sc: [gce] 12h15m18s remaining
-  mgoddard-sc-0001	mgoddard-sc-0001.us-east1-b.cockroach-ephemeral	10.142.0.23	104.196.167.117
-  mgoddard-sc-0002	mgoddard-sc-0002.us-east1-b.cockroach-ephemeral	10.142.0.26	34.75.173.251
-  mgoddard-sc-0003	mgoddard-sc-0003.us-east1-b.cockroach-ephemeral	10.142.0.22	35.231.56.245
-mgoddard-sc: waiting for nodes to start 3/3
+generating ssh key 1/1
 
 _COMMENT
 
 # Add gcloud SSH key. Optional for most commands, but some require it.
 ssh-add ~/.ssh/google_compute_engine
 
-# After doing this put, the file will be in ~ubuntu/ on each node
+# FOR PROD VERSION
+version="v20.1.5"
+roachprod stage $CLUSTER1 release $version
+roachprod stage $CLUSTER2 release $version
+
+# FOR THE ALPHA: After doing this put, the file will be in ~ubuntu/ on each node
 roachprod put ${CLUSTER1} cockroach-v20.2.0-alpha.3.linux-amd64/cockroach cockroach
 roachprod put ${CLUSTER2} cockroach-v20.2.0-alpha.3.linux-amd64/cockroach cockroach
 
 # SSH into the 0001 nodea
-m1=35.236.194.166
-m2=104.196.167.117
+m1=34.86.157.129
+m2=34.74.151.75
 
 ssh $m1 # Repeat for $m2
 
@@ -52,8 +53,8 @@ for file in libgeos.so libgeos_c.so ; do curl -OL https://storage.googleapis.com
 orgalorg -o ./hosts.all -x -er /usr/local/lib -U libgeos*
 
 # Start a cluster.
-roachprod start ${CLUSTER1}
-roachprod start ${CLUSTER2}
+roachprod start $CLUSTER1
+roachprod start $CLUSTER2
 
 # On the first node in $CLUSTER2, install the cdc-sink binary
 ssh $m2
@@ -63,16 +64,26 @@ chmod +x cdc-sink
 # Configure everything per https://github.com/cockroachdb/cdc-sink
 
 # On receiving end ($m2):
-cdc-sink --port 30004 --conn postgresql://root@localhost:26257/defaultdb?sslmode=disable --config='[{"endpoint": "osm.sql", "source_table": "osm", "destination_database": "defaultdb", "destination_table": "osm"}]'
+./cdc-sink --port 30004 --conn postgresql://root@localhost:26257/defaultdb?sslmode=disable --config='[{"endpoint": "osm.sql", "source_table": "osm", "destination_database": "defaultdb", "destination_table": "osm"}]'
+
+# On both source and sink
+SET CLUSTER SETTING rocksdb.min_wal_sync_interval = '500us';
 
 # On source end (replace the IP number with setting for $m2):
-SET CLUSTER SETTING kv.rangefeed.enabled = true
-CREATE CHANGEFEED FOR TABLE osm INTO 'experimental-http://10.142.0.23:30004/osm.sql' WITH updated,resolved;
+SET CLUSTER SETTING kv.rangefeed.enabled = true;
+CREATE CHANGEFEED FOR TABLE osm INTO 'experimental-http://10.142.0.101:30004/osm.sql' WITH updated,resolved;
+
+# Check the status of the changefeed
+select * from [show jobs]
+where job_type = 'CHANGEFEED';
+
+# Cancel the job associated with a changefeed.
+CANCEL JOB 588264558508670977;
 
 # Check the admin UI.
-roachprod admin --open ${CLUSTER1}:1
+roachprod admin --open ${CLUSTER1}:2
 
-# Later ...
+# ... Finally:
 roachprod destroy $CLUSTER1
 roachprod destroy $CLUSTER2
 
