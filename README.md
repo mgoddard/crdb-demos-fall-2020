@@ -114,10 +114,13 @@ CREATE INDEX ON osm USING GIN(key_value);
 * [Related GitHub issue](https://github.com/cockroachdb/docs/issues/5647)
 * Example, using the same OSM data set, loaded in batches for the above:
 
-* (*CURRENT*) Create an index on `date_time`
+* (*CURRENT*) Create an index on `date_time`, using a
+[hash-sharded index](https://www.cockroachlabs.com/blog/hash-sharded-indexes-unlock-linear-scaling-for-sequential-workloads/)
+to avoid hot-spotting.
 
 ```
-CREATE INDEX ON osm(date_time);
+SET experimental_enable_hash_sharded_indexes = on;
+CREATE INDEX ON osm(date_time) USING HASH WITH BUCKET_COUNT = 8;
 ```
 
 * Get a sample of the `date_time` values:

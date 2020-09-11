@@ -1,19 +1,22 @@
 #!/bin/bash
 
+# n2-highcpu-16 requires 2 local SSD
+vm_type="n2-highcpu-16"
+
 export CLUSTER1="${USER}-va"
-roachprod create ${CLUSTER1} --clouds gce --gce-zones us-east4-a -n 3 --local-ssd
+roachprod create ${CLUSTER1} --clouds gce --gce-zones us-east4-a -n 3 --local-ssd --gce-machine-type $vm_type --gce-local-ssd-count 2
 
 export CLUSTER2="${USER}-sc"
-roachprod create ${CLUSTER2} --clouds gce --gce-zones us-east1-b -n 3 --local-ssd
+roachprod create ${CLUSTER2} --clouds gce --gce-zones us-east1-b -n 3 --local-ssd --gce-machine-type $vm_type --gce-local-ssd-count 2
 
 # Below is an example of output from both of the "create" operations:
 : <<'_COMMENT'
 
 Refreshing DNS entries...
-mgoddard-va: [gce] 12h51m52s remaining
-  mgoddard-va-0001	mgoddard-va-0001.us-east4-a.cockroach-ephemeral	10.150.0.46	34.86.239.78
-  mgoddard-va-0002	mgoddard-va-0002.us-east4-a.cockroach-ephemeral	10.150.0.7	35.245.2.67
-  mgoddard-va-0003	mgoddard-va-0003.us-east4-a.cockroach-ephemeral	10.150.0.43	34.86.219.72
+mgoddard-va: [gce] 12h14m12s remaining
+  mgoddard-va-0001	mgoddard-va-0001.us-east4-a.cockroach-ephemeral	10.150.0.86	34.86.101.152
+  mgoddard-va-0002	mgoddard-va-0002.us-east4-a.cockroach-ephemeral	10.150.0.89	35.236.194.166
+  mgoddard-va-0003	mgoddard-va-0003.us-east4-a.cockroach-ephemeral	10.150.0.90	34.86.90.211
 mgoddard-va: waiting for nodes to start 3/3
 generating ssh key 1/1
 
@@ -32,7 +35,7 @@ roachprod put ${CLUSTER1} cockroach-v20.2.0-alpha.3.linux-amd64/cockroach cockro
 roachprod put ${CLUSTER2} cockroach-v20.2.0-alpha.3.linux-amd64/cockroach cockroach
 
 # SSH into the 0001 nodea
-m1=34.86.157.129
+m1=34.86.101.152
 m2=34.74.151.75
 
 ssh $m1 # Repeat for $m2
@@ -53,8 +56,13 @@ for file in libgeos.so libgeos_c.so ; do curl -OL https://storage.googleapis.com
 orgalorg -o ./hosts.all -x -er /usr/local/lib -U libgeos*
 
 # Start a cluster.
+# ./cockroach start --insecure --store=path=/mnt/data1/cockroach --log-dir=/home/ubuntu/logs --cache=25% --max-sql-memory=25% \
+#   --port=26257 --http-port=26258 --locality=cloud=gce,region=us-east4,zone=us-east4-a --join=34.86.101.152:26257 --advertise-host=10.150.0.86
 roachprod start $CLUSTER1
 roachprod start $CLUSTER2
+
+# See the locality info
+select crdb_internal.locality_value('region'), crdb_internal.locality_value('zone');
 
 # On the first node in $CLUSTER2, install the cdc-sink binary
 ssh $m2
