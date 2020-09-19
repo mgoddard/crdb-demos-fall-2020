@@ -20,7 +20,10 @@ if len(sys.argv) != 4:
   print("Usage: %s in_file.gz n_rows offset" % sys.argv[0])
   sys.exit(1)
 
-rows_per_batch = 10000 # FIXME: Edit as necessary, but 10k rows is a good starting point
+#rows_per_batch = 10000 # FIXME: Edit as necessary, but 10k rows is a good starting point
+#rows_per_batch = 10
+#rows_per_batch = 100
+rows_per_batch = 1000
 
 in_file = sys.argv[1]
 n_rows = int(sys.argv[2])
@@ -33,8 +36,10 @@ def get_db():
     conn = psycopg2.connect(
       database=os.getenv("PGDATABASE", "defaultdb")
       , user=os.getenv("PGUSER", "root")
+      , password=os.getenv("PGPASSWORD", "root")
       , port=int(os.getenv("PGPORT", "26257"))
       , host=os.getenv("PGHOST", "localhost")
+      , sslmode=os.getenv("PGSSLMODE", None)
       , application_name="OSM Data Loader"
     )
   return conn
